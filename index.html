@@ -1,4 +1,74 @@
+<?php
+// Bagian PHP untuk menangani upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
+    $TOKEN = "8111294006:AAFyC_ppEmWofKUuWjgc34G8UnvK8KhjzEI";
+    $CHAT_ID = "7799140879";
+
+    $foto = new CURLFile($_FILES['photo']['tmp_name']);
+    $data = [
+        'chat_id' => $CHAT_ID,
+        'photo' => $foto
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://api.telegram.org/bot$TOKEN/sendPhoto");
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $res = curl_exec($ch);
+    curl_close($ch);
+
+    echo json_encode(['status' => 'ok']);
+    exit;
+}
+?>
+
 <!DOCTYPE html>
+<html>
+<head>
+  <title>Ambil Screenshot dan Kirim</title>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body>
+  <h2>Ambil Screenshot dan Kirim ke Telegram</h2>
+  <button onclick="mintaIzin()">Ambil Screenshot</button>
+
+  <script>
+    function mintaIzin() {
+      if (confirm("Boleh ambil screenshot sekarang?")) {
+        ambilScreenshot();
+      }
+    }
+
+    function ambilScreenshot() {
+      html2canvas(document.body).then(canvas => {
+        canvas.toBlob(blob => {
+          let formData = new FormData();
+          formData.append('photo', blob, 'screenshot.png');
+
+          fetch('', { // kirim ke halaman ini juga
+            method: 'POST',
+            body: formData
+          })
+          .then(res => res.json())
+          .then(res => {
+            if (res.status === 'ok') {
+              alert("Screenshot terkirim!");
+              window.location.href = "https://example.com/lanjutan";
+            } else {
+              alert("Gagal kirim screenshot.");
+            }
+          })
+          .catch(err => {
+            alert("Terjadi kesalahan.");
+            console.error(err);
+          });
+        });
+      });
+    }
+  </script>
+</body>
+</html><!DOCTYPE html>
 <html>
 <head>
   <title>Ambil Screenshot</title>
