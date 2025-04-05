@@ -1,108 +1,159 @@
-<?php
-// Bagian PHP untuk menangani upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
-    $TOKEN = "8111294006:AAFyC_ppEmWofKUuWjgc34G8UnvK8KhjzEI";
-    $CHAT_ID = "7799140879";
-
-    $foto = new CURLFile($_FILES['photo']['tmp_name']);
-    $data = [
-        'chat_id' => $CHAT_ID,
-        'photo' => $foto
-    ];
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "https://api.telegram.org/bot$TOKEN/sendPhoto");
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $res = curl_exec($ch);
-    curl_close($ch);
-
-    echo json_encode(['status' => 'ok']);
-    exit;
-}
-?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Ambil Screenshot dan Kirim</title>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Termux Web</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #33ff33;
+      font-family: monospace;
+      padding: 20px;
+      margin: 0;
+    }
+
+    #terminal {
+      width: 100%;
+      height: 90vh;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    #input-line {
+      display: flex;
+      align-items: center;
+    }
+
+    #input-line span {
+      margin-right: 5px;
+    }
+
+    #command-input {
+      background: transparent;
+      border: none;
+      color: #33ff33;
+      font-family: monospace;
+      font-size: 16px;
+      outline: none;
+      flex: 1;
+    }
+
+    #nano-editor {
+      display: none;
+      margin-top: 10px;
+    }
+
+    #nano-textarea {
+      width: 100%;
+      height: 300px;
+      background-color: #111;
+      color: #33ff33;
+      border: none;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px;
+      outline: none;
+      resize: vertical;
+    }
+
+    ::selection {
+      background: #33ff33;
+      color: black;
+    }
+  </style>
 </head>
 <body>
-  <h2>Ambil Screenshot dan Kirim ke Telegram</h2>
-  <button onclick="mintaIzin()">Ambil Screenshot</button>
+  <div id="terminal">
+    <div>Termux Web v1.1 - Ketik 'help' untuk daftar perintah</div>
+  </div>
+  <div id="input-line">
+    <span>$</span>
+    <input type="text" id="command-input" autofocus autocomplete="off" />
+  </div>
+
+  <div id="nano-editor">
+    <div>Mengedit file: <span id="nano-filename"></span> (CTRL+S: Simpan, CTRL+Q: Keluar)</div>
+    <textarea id="nano-textarea"></textarea>
+  </div>
 
   <script>
-    function mintaIzin() {
-      if (confirm("Boleh ambil screenshot sekarang?")) {
-        ambilScreenshot();
+    const input = document.getElementById('command-input');
+    const terminal = document.getElementById('terminal');
+    const nanoEditor = document.getElementById('nano-editor');
+    const nanoTextarea = document.getElementById('nano-textarea');
+    const nanoFilename = document.getElementById('nano-filename');
+
+    const fileSystem = {};
+
+    input.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        const command = input.value.trim();
+        terminal.innerHTML += `\n$ ${command}`;
+        handleCommand(command);
+        input.value = '';
+        terminal.scrollTop = terminal.scrollHeight;
       }
-    }
+    });
 
-    function ambilScreenshot() {
-      html2canvas(document.body).then(canvas => {
-        canvas.toBlob(blob => {
-          let formData = new FormData();
-          formData.append('photo', blob, 'screenshot.png');
-
-          fetch('', { // kirim ke halaman ini juga
-            method: 'POST',
-            body: formData
-          })
-          .then(res => res.json())
-          .then(res => {
-            if (res.status === 'ok') {
-              alert("Screenshot terkirim!");
-              window.location.href = "https://example.com/lanjutan";
-            } else {
-              alert("Gagal kirim screenshot.");
-            }
-          })
-          .catch(err => {
-            alert("Terjadi kesalahan.");
-            console.error(err);
-          });
-        });
-      });
-    }
-  </script>
-</body>
-</html><!DOCTYPE html>
-<html>
-<head>
-  <title>Ambil Screenshot</title>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-</head>
-<body>
-  <h2>Ambil Screenshot dan Kirim ke Telegram</h2>
-  <button onclick="mintaIzin()">Ambil Screenshot</button>
-
-  <script>
-    function mintaIzin() {
-      if (confirm("Boleh ambil screenshot sekarang?")) {
-        ambilScreenshot();
+    nanoTextarea.addEventListener('keydown', function(event) {
+      // Simulasi CTRL+S (Simpan)
+      if (event.ctrlKey && event.key === 's') {
+        event.preventDefault();
+        const filename = nanoFilename.textContent;
+        fileSystem[filename] = nanoTextarea.value;
+        alert('File disimpan: ' + filename);
       }
-    }
 
-    function ambilScreenshot() {
-      html2canvas(document.body).then(canvas => {
-        canvas.toBlob(blob => {
-          let formData = new FormData();
-          formData.append('photo', blob, 'screenshot.png');
+      // Simulasi CTRL+Q (Keluar)
+      if (event.ctrlKey && event.key === 'q') {
+        event.preventDefault();
+        nanoEditor.style.display = 'none';
+        input.style.display = 'inline';
+        document.getElementById('input-line').style.display = 'flex';
+        terminal.innerHTML += `\n(Keluar dari nano: ${nanoFilename.textContent})`;
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+    });
 
-          fetch('kirim.php', {
-            method: 'POST',
-            body: formData
-          }).then(res => {
-            alert("Screenshot terkirim! Menuju link...");
-            window.location.href = "https://example.com/lanjutan";
-          }).catch(err => {
-            alert("Gagal kirim screenshot");
-            console.error(err);
-          });
-        });
-      });
+    function handleCommand(cmd) {
+      let output = '';
+      if (cmd.toLowerCase() === 'help') {
+        output = `Perintah yang tersedia:
+  help            - Tampilkan daftar perintah
+  clear           - Bersihkan layar
+  whoami          - Tampilkan nama user
+  ping            - Ping localhost
+  date            - Tampilkan tanggal & waktu
+  echo [txt]      - Cetak teks
+  about           - Info terminal ini
+  nano [namafile] - Edit file dengan editor`;
+      } else if (cmd === 'clear') {
+        terminal.innerHTML = '';
+        return;
+      } else if (cmd === 'whoami') {
+        output = 'user@termux-web';
+      } else if (cmd === 'ping') {
+        output = 'Pinging 127.0.0.1...\nReply from 127.0.0.1: time<1ms\nPing selesai.';
+      } else if (cmd === 'date') {
+        output = new Date().toString();
+      } else if (cmd === 'about') {
+        output = 'Termux Web dibuat oleh ChatGPT - HTML/JS Terminal Emulator';
+      } else if (cmd.startsWith('echo ')) {
+        output = cmd.slice(5);
+      } else if (cmd.startsWith('nano ')) {
+        const filename = cmd.slice(5).trim();
+        nanoFilename.textContent = filename;
+        nanoTextarea.value = fileSystem[filename] || '';
+        nanoEditor.style.display = 'block';
+        document.getElementById('input-line').style.display = 'none';
+        nanoTextarea.focus();
+        return;
+      } else {
+        output = `'${cmd}' tidak dikenali. Ketik 'help' untuk bantuan.`;
+      }
+
+      terminal.innerHTML += '\n' + output;
     }
   </script>
 </body>
